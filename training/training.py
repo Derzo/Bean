@@ -1,6 +1,5 @@
 from pathlib import Path
 from dataclasses import dataclass, field
-from math import pi
 
 from rlbot.utils.game_state_util import GameState, BoostState, BallState, CarState, Physics, Vector3, Rotator
 from rlbot.matchconfig.match_config import MatchConfig, PlayerConfig, Team
@@ -45,7 +44,7 @@ class StrikerPatience(StrikerExercise):
                 0: CarState(
                     physics=Physics(
                         location=Vector3(self.car_start_x, 3000, 0),
-                        rotation=Rotator(0, pi / 2, 0),
+                        rotation=Rotator(0, 3.1416 / 2, 0),
                         velocity=Vector3(0, 0, 0),
                         angular_velocity=Vector3(0, 0, 0)),
                     jumped=False,
@@ -61,22 +60,25 @@ class DrivesToBallExercise(TrainingExercise):
     Checks that we drive to the ball when it's in the center of the field.
     """
     grader: Grader = field(default_factory=DriveToBallGrader)
+    
+    carPos: Vector3 = Vector3(0, 0, 0)
+    carSpeed: Vector3 = 500
+    ballPos: Vector3 = Vector3(-1500, -555, 100)
+    ballVel: Vector3 = Vector3(0, 0, 500)
 
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
         return GameState(
             ball=BallState(physics=Physics(
-                location=Vector3(0, 0, 100),
-                velocity=Vector3(0, 0, 0),
+                location=self.ballPos,
+                velocity=self.ballVel,
                 angular_velocity=Vector3(0, 0, 0))),
             cars={
                 0: CarState(
                     physics=Physics(
-                        location=Vector3(0, 2000, 0),
-                        rotation=Rotator(0, -pi / 2, 0),
-                        velocity=Vector3(0, 0, 0),
+                        location=self.carPos,
+                        rotation=Rotator(0, -3.1416 / 2, 0),
+                        velocity=Vector3(0, -self.carSpeed, 0),
                         angular_velocity=Vector3(0, 0, 0)),
-                    jumped=False,
-                    double_jumped=False,
                     boost_amount=100)
             },
             boosts={i: BoostState(0) for i in range(34)},
@@ -85,10 +87,9 @@ class DrivesToBallExercise(TrainingExercise):
 
 def make_default_playlist() -> Playlist:
     exercises = [
-        StrikerPatience('start perfectly center'),
-        StrikerPatience('start on the right', car_start_x=-1000),
-        DrivesToBallExercise('Get close to ball'),
-        DrivesToBallExercise('Get close-ish to ball', grader=DriveToBallGrader(min_dist_to_pass=1000))
+        DrivesToBallExercise(name="patience", carPos=Vector3(2002, 255, 0), ballVel=Vector3(500, 1000, 200))
+        # DrivesToBallExercise('Get close to ball', grader=DriveToBallGrader(carPos=Vector3(100, 100, 100), timeout_seconds=5))
+        #DrivesToBallExercise('Get close to ball', grader=DriveToBallGrader(5)),
     ]
     for exercise in exercises:
         exercise.match_config = make_match_config_with_my_bot()
